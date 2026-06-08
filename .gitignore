@@ -1,0 +1,10 @@
+# Este repo é só vitrine + downloads. Binários vão como assets do Release, não commitados.
+tj-mapa
+tj-mapa.exe
+*_amd64
+*_arm64
+*.exe
+*.skill
+mapa.json
+mapa.md
+.env
