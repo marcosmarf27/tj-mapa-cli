@@ -2,13 +2,87 @@
 
 **Índice navegável de processos judiciais para o seu agente de IA.**
 
-O `tj-mapa` lê os autos de um processo em Markdown e devolve um **mapa estrutural**: cada peça
-(petição, despacho, decisão, sentença, certidão, ofício, mandado…) com **página e linha
-exatas**, tipo e resumo. Assim o agente vai **direto ao trecho certo** em vez de reler o
-processo inteiro — rápido e a custo de centavos.
-
 Parte do ecossistema **TecJustiça**: OCR jurídico ([ocr.tecjustica.com](https://ocr.tecjustica.com/))
 → **tj-mapa** → MCP ([mcp.tecjustica.com](https://mcp.tecjustica.com/)) — usados em conjunto com o Claude Code.
+
+---
+
+## O que o tj-mapa faz
+
+Quando um agente de IA precisa trabalhar um processo de 300, 500, 800 páginas, ele acaba
+**relendo os autos inteiros** a cada pergunta — lento, caro em tokens e sujeito a erro. É como
+reler um livro de 800 páginas toda vez que você quer achar um capítulo.
+
+O `tj-mapa` resolve isso gerando o **mapa estrutural** do processo: ele localiza **cada peça**
+(petição, contestação, despacho, decisão, sentença, certidão, ofício, mandado…) e devolve, para
+cada uma:
+
+- **Onde está** — intervalo exato de **página** e de **linha**;
+- **O que é** — o tipo provável da peça;
+- **Do que trata** — um resumo de uma ou duas frases;
+- **A prova** — uma citação literal que ancora o trecho no documento original.
+
+Não é um resumo do processo (resumir descarta o original e arrisca alucinação). É um **índice
+com endereços** — o original continua sendo a fonte da verdade; o mapa só o torna **navegável**.
+
+## O mapa na prática
+
+```text
+$ tj-mapa -in processo.md -formato ambos
+
+  ✓ 312 páginas  →  47 peças mapeadas  ·  1m54s  ·  custo: US$ 0,04
+  → mapa.json  /  mapa.md
+```
+
+Um trecho do `mapa.md` gerado:
+
+| # | Páginas | Linhas | Peça | Resumo |
+|---|--------|--------|------|--------|
+| 2 | 2–5 | 46–277 | PETIÇÃO INICIAL | Denúncia do MP por furto qualificado. |
+| 4 | 8–9 | 412–489 | DECISÃO | Recebimento da denúncia; designa audiência. |
+| 23 | 142–148 | 13.820–14.310 | SENTENÇA | Condena o réu; pena em regime aberto. |
+
+**O ganho para o agente de IA:**
+
+> **Antes:** lê ~28.000 linhas para localizar a sentença.
+> **Depois:** consulta o mapa, vê *"SENTENÇA — págs 142–148, linhas 13.820–14.310"* e lê **490 linhas**.
+
+Mais rápido, mais barato e mais **preciso** — a IA trabalha sempre sobre o texto real, na
+localização exata, e não sobre um resumo de segunda mão. Um processo inteiro é mapeado por
+**centavos**, em poucos minutos.
+
+## O diferencial: a inteligência está no algoritmo, não no LLM
+
+Mandar o processo inteiro para um modelo de IA e pedir o índice seria **lento, caro e instável**
+— o modelo alucina páginas e linhas, e cada nova pergunta recomeça do zero. O `tj-mapa` faz o
+oposto: o trabalho pesado é de um **algoritmo proprietário da TecJustiça**, determinístico e
+rodando localmente, que aciona o modelo **apenas no ponto exato que exige julgamento**, com
+contexto mínimo. É daí que vem a combinação que parece contraditória — **rápido, custo de
+centavos e preciso, tudo ao mesmo tempo**.
+
+Ou seja: o segredo do mapeamento está na **engenharia do nosso algoritmo**, não em "jogar tudo
+num LLM e torcer". O modelo é uma peça barata e substituível; a inteligência que coordena o
+processo é o nosso diferencial — e o que torna isso viável na rotina, em escala e a baixo custo.
+
+## De onde vem a entrada: o OCR jurídico da TecJustiça
+
+O `tj-mapa` **não lê PDF**. A entrada dele é o **Markdown gerado pelo OCR jurídico da
+TecJustiça** — é uma **dependência**: primeiro o PDF dos autos passa pelo OCR, que devolve texto
+limpo com **uma página por marcador `## Página N`**; é desse formato que o `tj-mapa` parte.
+
+```
+   PDF dos autos
+        │   OCR jurídico  →  ocr.tecjustica.com
+        ▼
+   Markdown  (uma página por "## Página N")
+        │   tj-mapa
+        ▼
+   mapa.json  +  mapa.md   →  o agente de IA navega direto ao ponto
+```
+
+A qualidade do mapa acompanha a do OCR. Por isso o **OCR otimizado para documentos jurídicos
+brasileiros** (carimbos, assinaturas digitais, varas e sistemas diversos) faz diferença: texto
+fiel entra, mapa preciso sai. Gere o Markdown dos seus autos em **[ocr.tecjustica.com](https://ocr.tecjustica.com/)**.
 
 ---
 
@@ -58,9 +132,8 @@ tj-mapa -in processo.md -formato ambos
 ```
 
 Gera **`mapa.json`** (para o agente consumir) e **`mapa.md`** (tabela legível, com custo e tempo
-no topo). A entrada é o Markdown do processo (saída do OCR, uma página por marcador
-`## Página N`). Para só a estrutura, mais rápido: adicione `-sem-enriquecer`. Todas as opções:
-`tj-mapa -h`.
+no topo). A entrada `processo.md` é o Markdown vindo do OCR (uma página por `## Página N`). Para
+só a estrutura, mais rápido: adicione `-sem-enriquecer`. Todas as opções: `tj-mapa -h`.
 
 ## 5. Skill do Claude Code (opcional)
 
