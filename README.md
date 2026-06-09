@@ -143,8 +143,26 @@ tj-mapa -in processo.md -formato ambos
 ```
 
 Gera **`mapa.json`** (para o agente consumir) e **`mapa.md`** (tabela legível, com custo e tempo
-no topo). A entrada `processo.md` é o Markdown vindo do OCR. Para só a estrutura, em segundos:
-adicione `-sem-enriquecer`. Todas as opções: `tj-mapa -h`.
+no topo). A entrada `processo.md` é o Markdown vindo do OCR. Todas as opções: `tj-mapa -h`.
+
+### ⚡ Acelerar (concorrência)
+
+O pipeline já paraleliza as chamadas de IA em lotes. A alavanca principal é **`-concorrencia`**
+(workers paralelos, default `6` — conservador); quando você só quer o índice, **`-sem-enriquecer`**
+é o maior ganho isolado (pula a fase que dominava ~70% do tempo e do custo).
+
+| Cenário | Comando |
+|---|---|
+| Padrão (mapa completo) | `tj-mapa -in processo.md -formato ambos` |
+| Processo grande (300–600 pág) | `tj-mapa -in processo.md -concorrencia 18` |
+| Processo enorme (600+ pág) | `tj-mapa -in processo.md -concorrencia 24 -batch 30` |
+| Só a estrutura, no talo | `tj-mapa -in processo.md -sem-enriquecer -concorrencia 24` |
+| Turbo (completo) | `tj-mapa -in processo.md -formato ambos -concorrencia 24 -batch 30 -enriquecer-batch 12` |
+
+Tempo de rede ≈ **O(segmentos / (`batch` · `concorrencia`))** — subir qualquer um dos dois corta o
+tempo. Teto prático: ~64 conexões quentes; acima disso vale o **rate limit do provedor** (muitos
+`429` → baixe a concorrência, o backoff já segura). A qualidade **não** muda com mais workers.
+Referência completa de flags no **[README do projeto](https://github.com/marcosmarf27/tj-mapa#-velocidade--concorrência)**.
 
 ## 5. Skill do Claude Code (opcional)
 
