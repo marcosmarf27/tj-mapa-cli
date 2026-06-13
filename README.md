@@ -20,6 +20,28 @@
 
 ---
 
+## Em 1 minuto
+
+O `tj-mapa` é **um comando só**. Você dá a ele o processo em texto (o Markdown do OCR) e ele
+devolve um **índice** que diz onde está cada peça — petição, decisão, sentença… — com
+**página e linha exatas**:
+
+```bash
+tj-mapa -in processo.md -formato ambos
+```
+
+Para funcionar, ele usa **duas chaves de API** (configura uma vez, leva 30 segundos):
+
+| Chave | O que é | Para quê serve |
+|---|---|---|
+| 🔑 **OpenRouter** | o **motor** | é a IA que lê os trechos e monta o índice — é quem **faz o trabalho** (você paga o uso: centavos por processo) |
+| 🪪 **TecJustiça** | a **licença** | só **confirma que você tem acesso**. É a **mesma chave do OCR** — afinal o tj-mapa depende do OCR pra gerar a entrada |
+
+Em resumo: sem a do **OpenRouter** ele não tem como trabalhar; sem a da **TecJustiça** ele não
+libera. Como pegar e configurar as duas está no passo 3, logo abaixo.
+
+---
+
 Não é um resumo. Não é "mais um wrapper de ChatGPT". É um **algoritmo compilado em Go** que
 transforma centenas de páginas de autos num índice navegável e preciso, a um custo tão baixo que
 você roda em todo processo, todo dia.
@@ -147,16 +169,30 @@ chmod +x ./tj-mapa_linux_amd64
 Abra um **novo terminal** e pronto — `tj-mapa` funciona em qualquer lugar. Instalação
 **por usuário** (sem admin). Para remover: `tj-mapa uninstall`.
 
-## 3. Configurar a chave (OpenRouter)
+## 3. Configurar as duas chaves
 
+Uma vez por máquina. Cada comando pede a chave e lê do teclado (não fica no histórico):
+
+**1) OpenRouter — o motor de IA (faz o trabalho)**
 ```
 tj-mapa config set        # cola a chave e tecla Enter
 ```
+Pegue em **[openrouter.ai/keys](https://openrouter.ai/keys)** (começa com `sk-or-...`).
 
-Pegue a sua chave em [openrouter.ai/keys](https://openrouter.ai/keys). Também funciona a
-variável de ambiente `OPENROUTER_API_KEY` ou um arquivo `.env`.
+**2) TecJustiça — a sua licença (a mesma chave do OCR)**
+```
+tj-mapa config set-ocr    # cola a chave e tecla Enter
+```
+Pegue/gerencie em **[tecjustica-dashboard...railway.app](https://tecjustica-dashboard-production.up.railway.app)** (começa com `tjp_...`).
 
-> Dá para instalar e já configurar a chave de uma vez: `... install --key sk-or-...`
+Confira quando quiser com `tj-mapa config show`.
+
+> **Atalho:** dá pra configurar as duas já na instalação —
+> `... install --key sk-or-... --ocr-key tjp_...`
+>
+> Também funcionam variáveis de ambiente (`OPENROUTER_API_KEY`, `TECJUSTICA_PARSE_KEY`) ou um
+> arquivo `.env` no diretório. Quem só quer **conferir a leitura** dos autos sem IA pode rodar
+> `tj-mapa -in processo.md -fase 0` — essa parte é offline e **não exige chave nenhuma**.
 
 ## 4. Usar
 
@@ -167,24 +203,20 @@ tj-mapa -in processo.md -formato ambos
 Gera **`mapa.json`** (para o agente consumir) e **`mapa.md`** (tabela legível, com custo e tempo
 no topo). A entrada `processo.md` é o Markdown vindo do OCR. Todas as opções: `tj-mapa -h`.
 
-### ⚡ Acelerar (concorrência)
+### ⚡ Mais rápido em processos grandes
 
-O pipeline já paraleliza as chamadas de IA em lotes. A alavanca principal é **`-concorrencia`**
-(workers paralelos, default `6` — conservador); quando você só quer o índice, **`-sem-enriquecer`**
-é o maior ganho isolado (pula a fase que dominava ~70% do tempo e do custo).
+Por padrão já é rápido. Em processos muito grandes dá pra acelerar com **`-concorrencia`** (faz
+mais coisas ao mesmo tempo) e, quando você só quer a estrutura, **`-sem-enriquecer`** (pula a
+parte mais demorada):
 
-| Cenário | Comando |
+| Quero… | Comando |
 |---|---|
-| Padrão (mapa completo) | `tj-mapa -in processo.md -formato ambos` |
-| Processo grande (300–600 pág) | `tj-mapa -in processo.md -concorrencia 18` |
-| Processo enorme (600+ pág) | `tj-mapa -in processo.md -concorrencia 24 -batch 30` |
-| Só a estrutura, no talo | `tj-mapa -in processo.md -sem-enriquecer -concorrencia 24` |
-| Turbo (completo) | `tj-mapa -in processo.md -formato ambos -concorrencia 24 -batch 30 -enriquecer-batch 12` |
+| O mapa completo (padrão) | `tj-mapa -in processo.md -formato ambos` |
+| Acelerar um processo grande | `tj-mapa -in processo.md -concorrencia 18` |
+| Só a estrutura, o mais rápido | `tj-mapa -in processo.md -sem-enriquecer -concorrencia 24` |
 
-Tempo de rede ≈ **O(segmentos / (`batch` · `concorrencia`))** — subir qualquer um dos dois corta o
-tempo. Teto prático: ~64 conexões quentes; acima disso vale o **rate limit do provedor** (muitos
-`429` → baixe a concorrência, o backoff já segura). A qualidade **não** muda com mais workers.
-Referência completa de flags no **[README do projeto](https://github.com/marcosmarf27/tj-mapa#-velocidade--concorrência)**.
+Todas as opções: `tj-mapa -h`. Ajuste fino de desempenho no
+**[README do projeto](https://github.com/marcosmarf27/tj-mapa#-velocidade--concorrência)**.
 
 ## 5. Skill do Claude Code (opcional)
 
