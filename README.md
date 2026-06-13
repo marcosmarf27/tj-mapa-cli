@@ -1,6 +1,24 @@
-# tj-mapa
+<div align="center">
 
-**Mapa estrutural de um processo judicial inteiro — em segundos, por centavos.**
+<img src="assets/banner.png" alt="tj-mapa — mapa estrutural de processos judiciais" width="100%">
+
+<br><br>
+
+<img src="assets/logo.png" alt="tj-mapa" width="92">
+
+<h1>tj-mapa</h1>
+
+<strong>Mapa estrutural de um processo judicial inteiro — em segundos, por centavos.</strong>
+
+<p>
+<img src="https://img.shields.io/badge/feito%20em-Go-00ADD8?logo=go&logoColor=white" alt="Go">
+<img src="https://img.shields.io/badge/Windows%20·%20Linux%2FWSL-x86--64-1E1E24" alt="Plataformas">
+<img src="https://img.shields.io/badge/TecJusti%C3%A7a-OCR%20%E2%86%92%20mapa%20%E2%86%92%20MCP-C9A227" alt="Ecossistema TecJustiça">
+</p>
+
+</div>
+
+---
 
 Não é um resumo. Não é "mais um wrapper de ChatGPT". É um **algoritmo compilado em Go** que
 transforma centenas de páginas de autos num índice navegável e preciso, a um custo tão baixo que
@@ -77,6 +95,10 @@ Um trecho do `mapa.md`:
 > **Depois:** consulta o mapa, vê *"SENTENÇA — págs 142–148, linhas 13.820–14.310"* e lê **490 linhas**.
 
 ## De onde vem a entrada: o OCR jurídico da TecJustiça
+
+<div align="center">
+<img src="assets/fluxo.png" alt="Fluxo: PDF dos autos → OCR jurídico → tj-mapa → mapa navegável" width="92%">
+</div>
 
 O `tj-mapa` **não lê PDF** — ele parte do **Markdown gerado pelo OCR jurídico da TecJustiça**.
 É uma **dependência** do fluxo:
